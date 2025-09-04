@@ -72,6 +72,6 @@ jobs:
       - name: Terraform Apply
         working-directory: ./environments/${{ env.ENVIRONMENT }}
         if: |
-          github.event_name == 'push' && env.ENVIRONMENT == 'dev' ||  # auto-apply dev after merge
-          github.event_name == 'workflow_dispatch'                     # manual apply for staging/prod
+          github.event_name == 'push' && env.ENVIRONMENT == 'dev' ||
+          github.event_name == 'workflow_dispatch'                     
         run: terraform apply -var "credentials_file=/tmp/gcp-key.json" -auto-approve tfplan
