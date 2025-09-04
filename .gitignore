@@ -1,0 +1,27 @@
+# Local Terraform directories
+.terraform/
+#.terraform.lock.hcl
+
+# Local Terraform variable files with secrets
+#*.tfvars
+*.tfvars.json
+
+# Crash logs
+crash.log
+
+# Terraform plan files
+*.tfplan
+
+# Editor files
+*.swp
+*.vscode/
+*.idea/
+*.DS_Store
+
+# Temporary files used in GitHub Actions (if any)
+tmp/
+
+tfplan
+*.tfplan
+*.tfstate
+*credential-file.json

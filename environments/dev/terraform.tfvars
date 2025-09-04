@@ -1,0 +1,5 @@
+env              = "dev"
+project_id       = "my-bq-terraform-demo-123"
+credentials_file = "credential-file.json"
+region           = "us-central1"
+backend_bucket   = "tfstate-my-bq-terraform-demo-123"
