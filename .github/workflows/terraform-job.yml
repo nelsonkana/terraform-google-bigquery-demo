@@ -32,6 +32,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -57,10 +63,10 @@ jobs:
       
       - name: Terraform Plan
         working-directory: ./environments/${{ inputs.environment }}
-        run: terraform plan -var-file=terraform.tfvars -var "credentials_file=/tmp/gcp-key.json" -out=tfplan
+        run: terraform plan -var-file=terraform.tfvars -out=tfplan
 
       - name: Terraform Apply
         working-directory: ./environments/${{ inputs.environment }}
         if: |
           github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        run: terraform apply -var "credentials_file=/tmp/gcp-key.json" -auto-approve tfplan
+        run: terraform apply -auto-approve tfplan
