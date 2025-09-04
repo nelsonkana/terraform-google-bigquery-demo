@@ -45,9 +45,9 @@ jobs:
       # Step 3: Configure GCP credentials
       - name: Setup GCP Credentials
         run: |
-          echo "{{ secrets[format('GCP_SA_KEY_%s', env.ENVIRONMENT | upper)] }}" > /tmp/gcp-key.json
+          echo "{{ secrets[format('GCP_SA_KEY_%s', env.ENVIRONMENT) | upper)] }}" > /tmp/gcp-key.json
           gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
-          gcloud config set project ${{ secrets[format('GCP_PROJECT_ID_%s', env.ENVIRONMENT | upper)] }}
+          gcloud config set project ${{ secrets[format('GCP_PROJECT_ID_%s', env.ENVIRONMENT) | upper)] }}
       
       #Step 3.1 Write  backend.tfvars
       - name: Write backend.tfvars
