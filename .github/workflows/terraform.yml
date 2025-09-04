@@ -1,77 +1,77 @@
-name: Terraform CI/CD
+# name: Terraform CI/CD
 
-on:
-  pull_request:
-    branches:
-      - main
-      - dev
-      - staging
-  push:
-    branches:
-      - main
-      - dev
-      - staging
-  workflow_dispatch:  # manual triggers for staging/prod
-    inputs:
-      environment:
-        description: 'Environment to deploy'
-        required: true
-        default: staging
+# on:
+#   pull_request:
+#     branches:
+#       - main
+#       - dev
+#       - staging
+#   push:
+#     branches:
+#       - main
+#       - dev
+#       - staging
+#   workflow_dispatch:  # manual triggers for staging/prod
+#     inputs:
+#       environment:
+#         description: 'Environment to deploy'
+#         required: true
+#         default: staging
 
-env:
-  TF_VERSION: 1.7.5
-  ENVIRONMENT: ${{ github.event.inputs.environment || github.ref_name }}
+# env:
+#   TF_VERSION: 1.7.5
+#   ENVIRONMENT: ${{ github.event.inputs.environment || github.ref_name }}
 
-jobs:
-  terraform:
-    name: Terraform Plan & Apply
-    runs-on: ubuntu-latest
+# jobs:
+#   terraform:
+#     name: Terraform Plan & Apply
+#     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        shell: bash
+#     defaults:
+#       run:
+#         shell: bash
 
-    steps:
-      # Step 1: Checkout repo
-      - name: Checkout
-        uses: actions/checkout@v3
+#     steps:
+#       # Step 1: Checkout repo
+#       - name: Checkout
+#         uses: actions/checkout@v3
 
-      # Step 2: Set up Terraform
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
+#       # Step 2: Set up Terraform
+#       - name: Setup Terraform
+#         uses: hashicorp/setup-terraform@v3
+#         with:
+#           terraform_version: ${{ env.TF_VERSION }}
 
-      # Step 3: Configure GCP credentials
-      - name: Setup GCP Credentials
-        run: |
-          echo "${{ secrets['GCP_SA_KEY_' + env.ENVIRONMENT] }}" > /tmp/gcp-key.json
-          gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
-          gcloud config set project ${{ secrets['GCP_PROJECT_ID_' + env.ENVIRONMENT] }}
+#       # Step 3: Configure GCP credentials
+#       - name: Setup GCP Credentials
+#         run: |
+#           echo "${{ secrets['GCP_SA_KEY_' + env.ENVIRONMENT] }}" > /tmp/gcp-key.json
+#           gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
+#           gcloud config set project ${{ secrets['GCP_PROJECT_ID_' + env.ENVIRONMENT] }}
       
-      #Step 3.1 Write  backend.tfvars
-      - name: Write backend.tfvars
-        run: |
-          sed "s|credentials = .*|credentials = \"/tmp/gcp-key.json\"|" ./environments/${{ env.ENVIRONMENT }}/backend.tfvars > /tmp/backend.tfvars
+#       #Step 3.1 Write  backend.tfvars
+#       - name: Write backend.tfvars
+#         run: |
+#           sed "s|credentials = .*|credentials = \"/tmp/gcp-key.json\"|" ./environments/${{ env.ENVIRONMENT }}/backend.tfvars > /tmp/backend.tfvars
       
-      # Step 4: Terraform Init
-      - name: Terraform Init
-        working-directory: ./environments/${{ env.ENVIRONMENT }}
-        run: terraform init -backend-config=/tmp/backend.tfvars
+#       # Step 4: Terraform Init
+#       - name: Terraform Init
+#         working-directory: ./environments/${{ env.ENVIRONMENT }}
+#         run: terraform init -backend-config=/tmp/backend.tfvars
       
-      - name: Terraform Validate
-        working-directory: ./environments/${{ env.ENVIRONMENT }}
-        run: terraform validate
+#       - name: Terraform Validate
+#         working-directory: ./environments/${{ env.ENVIRONMENT }}
+#         run: terraform validate
       
-      # Step 5: Terraform Plan
-      - name: Terraform Plan
-        working-directory: ./environments/${{ env.ENVIRONMENT }}
-        run: terraform plan -var-file=terraform.tfvars -var "credentials_file=/tmp/gcp-key.json" -out=tfplan
+#       # Step 5: Terraform Plan
+#       - name: Terraform Plan
+#         working-directory: ./environments/${{ env.ENVIRONMENT }}
+#         run: terraform plan -var-file=terraform.tfvars -var "credentials_file=/tmp/gcp-key.json" -out=tfplan
 
-      # Step 6: Terraform Apply
-      - name: Terraform Apply
-        working-directory: ./environments/${{ env.ENVIRONMENT }}
-        if: |
-          github.event_name == 'push' && env.ENVIRONMENT == 'dev' ||
-          github.event_name == 'workflow_dispatch'                     
-        run: terraform apply -var "credentials_file=/tmp/gcp-key.json" -auto-approve tfplan
+#       # Step 6: Terraform Apply
+#       - name: Terraform Apply
+#         working-directory: ./environments/${{ env.ENVIRONMENT }}
+#         if: |
+#           github.event_name == 'push' && env.ENVIRONMENT == 'dev' ||
+#           github.event_name == 'workflow_dispatch'                     
+#         run: terraform apply -var "credentials_file=/tmp/gcp-key.json" -auto-approve tfplan

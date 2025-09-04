@@ -1,0 +1,61 @@
+# .github/workflows/terraform-job.yml
+name: Reusable Terraform Job
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+    secrets:
+      GCP_SA_KEY:
+        required: true
+      GCP_PROJECT_ID:
+        required: true
+
+jobs:
+  terraform:
+    name: Terraform Plan & Apply
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.5
+
+      - name: Setup GCP Credentials
+        run: |
+          echo "${{ secrets.GCP_SA_KEY }}" > /tmp/gcp-key.json
+          gcloud auth activate-service-account --key-file=/tmp/gcp-key.json
+          gcloud config set project ${{ secrets.GCP_PROJECT_ID }}
+      
+      - name: Write backend.tfvars
+        run: |
+          sed "s|credentials = .*|credentials = \"/tmp/gcp-key.json\"|" ./environments/${{ inputs.environment }}/backend.tfvars > /tmp/backend.tfvars
+      
+      - name: Terraform Init
+        working-directory: ./environments/${{ inputs.environment }}
+        run: terraform init -backend-config=/tmp/backend.tfvars
+      
+      - name: Terraform Validate
+        working-directory: ./environments/${{ inputs.environment }}
+        run: terraform validate
+      
+      - name: Terraform Plan
+        working-directory: ./environments/${{ inputs.environment }}
+        run: terraform plan -var-file=terraform.tfvars -var "credentials_file=/tmp/gcp-key.json" -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: ./environments/${{ inputs.environment }}
+        if: |
+          github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        run: terraform apply -var "credentials_file=/tmp/gcp-key.json" -auto-approve tfplan
